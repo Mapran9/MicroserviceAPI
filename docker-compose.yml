@@ -1,0 +1,89 @@
+version: "3.9"
+
+networks:
+  ms-net:
+
+services:
+  gateway:
+    image: nginx:alpine
+    container_name: ms-gateway
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./gateway/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - customer-service
+      - product-service
+      - cart-service
+      - order-service
+    networks:
+      - ms-net
+
+  customer-service:
+    build:
+      context: ./services/customer
+    container_name: customer-service
+    environment:
+      SERVICE_NAME: customer-service
+      PORT: "8001"
+      DB_DSN: "root:root@tcp(host.docker.internal:3301)/customer_service_db?parseTime=true"
+    ports:
+      - "8001:8001"
+    networks:
+      - ms-net
+
+  product-service:
+    build:
+      context: ./services/product
+    container_name: product-service
+    environment:
+      SERVICE_NAME: product-service
+      PORT: "8002"
+      DB_DSN: "root:root@tcp(host.docker.internal:3302)/product_service_db?parseTime=true"
+    ports:
+      - "8002:8002"
+    networks:
+      - ms-net
+
+  cart-service:
+    build:
+      context: ./services/cart
+    container_name: cart-service
+    environment:
+      SERVICE_NAME: cart-service
+      PORT: "8003"
+      DB_DSN: "root:root@tcp(host.docker.internal:3303)/cart_service_db?parseTime=true"
+      PRODUCT_BASE_URL: "http://product-service:8002"
+    ports:
+      - "8003:8003"
+    networks:
+      - ms-net
+
+  order-service:
+    build:
+      context: ./services/order
+    container_name: order-service
+    environment:
+      SERVICE_NAME: order-service
+      PORT: "8004"
+      DB_DSN: "root:root@tcp(host.docker.internal:3304)/order_service_db?parseTime=true"
+      CART_BASE_URL: "http://cart-service:8003"
+      PAYMENT_BASE_URL: "http://payment-service:8005"
+    ports:
+      - "8004:8004"
+    networks:
+      - ms-net
+
+  payment-service:
+    build:
+      context: ./services/payment
+    container_name: payment-service
+    environment:
+      SERVICE_NAME: payment-service
+      PORT: "8005"
+      DB_DSN: "root:root@tcp(host.docker.internal:3305)/payment_service_db?parseTime=true"
+    ports:
+      - "8005:8005"
+    networks:
+      - ms-net
+
