@@ -18,6 +18,6 @@ func main() {
 	app := fiber.New()
 	routes.Setup(app)
 
-	log.Printf("%s listening on :%s", cfg.ServiceName, cfg.Port)
+	log.Printf("%s listening on :%s instance=%s", cfg.ServiceName, cfg.Port, cfg.InstanceID)
 	log.Fatal(app.Listen(":" + cfg.Port))
 }

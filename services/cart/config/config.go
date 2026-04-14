@@ -5,12 +5,14 @@ import "os"
 type Config struct {
 	Port        string
 	ServiceName string
+	InstanceID  string
 }
 
 func Load() Config {
 	return Config{
 		Port:        getEnv("PORT", "8003"),
 		ServiceName: getEnv("SERVICE_NAME", "cart-service"),
+		InstanceID:  getEnv("INSTANCE_ID", getEnv("HOSTNAME", "unknown")),
 	}
 }
 

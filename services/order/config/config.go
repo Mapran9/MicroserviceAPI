@@ -8,6 +8,7 @@ type Config struct {
 	DBDSN          string
 	CartBaseURL    string
 	PaymentBaseURL string
+	InstanceID     string
 }
 
 func Load() Config {
@@ -17,6 +18,7 @@ func Load() Config {
 		DBDSN:          getEnv("DB_DSN", ""),
 		CartBaseURL:    getEnv("CART_BASE_URL", "http://localhost:8003"),
 		PaymentBaseURL: getEnv("PAYMENT_BASE_URL", "http://localhost:8005"),
+		InstanceID:     getEnv("INSTANCE_ID", getEnv("HOSTNAME", "unknown")),
 	}
 }
 
