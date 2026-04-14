@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"os"
 	"strings"
@@ -26,6 +27,19 @@ type CreatePaymentResponse struct {
 	Status    string  `json:"status"`
 }
 
+var paymentHTTPClient = &http.Client{
+	Timeout: 5 * time.Second,
+	Transport: &http.Transport{
+		MaxIdleConns:        200,
+		MaxIdleConnsPerHost: 100,
+		IdleConnTimeout:     90 * time.Second,
+		DialContext: (&net.Dialer{
+			Timeout:   2 * time.Second,
+			KeepAlive: 30 * time.Second,
+		}).DialContext,
+	},
+}
+
 func CreatePayment(req CreatePaymentRequest) (*CreatePaymentResponse, error) {
 	baseURL := strings.TrimRight(os.Getenv("PAYMENT_BASE_URL"), "/")
 	if baseURL == "" {
@@ -45,8 +59,7 @@ func CreatePayment(req CreatePaymentRequest) (*CreatePaymentResponse, error) {
 	}
 	httpReq.Header.Set("Content-Type", "application/json")
 
-	client := &http.Client{Timeout: 5 * time.Second}
-	resp, err := client.Do(httpReq)
+	resp, err := paymentHTTPClient.Do(httpReq)
 	if err != nil {
 		return nil, fmt.Errorf("call payment-service failed: %w", err)
 	}

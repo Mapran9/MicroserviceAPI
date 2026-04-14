@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"os"
 	"strings"
@@ -11,6 +12,19 @@ import (
 
 	"order/internal/models"
 )
+
+var cartHTTPClient = &http.Client{
+	Timeout: 5 * time.Second,
+	Transport: &http.Transport{
+		MaxIdleConns:        200,
+		MaxIdleConnsPerHost: 100,
+		IdleConnTimeout:     90 * time.Second,
+		DialContext: (&net.Dialer{
+			Timeout:   2 * time.Second,
+			KeepAlive: 30 * time.Second,
+		}).DialContext,
+	},
+}
 
 func GetCart(cartID string) (*models.CartDTO, error) {
 	baseURL := strings.TrimRight(os.Getenv("CART_BASE_URL"), "/")
@@ -20,8 +34,7 @@ func GetCart(cartID string) (*models.CartDTO, error) {
 
 	url := fmt.Sprintf("%s/api/Carts/%s", baseURL, cartID)
 
-	client := &http.Client{Timeout: 5 * time.Second}
-	resp, err := client.Get(url)
+	resp, err := cartHTTPClient.Get(url)
 	if err != nil {
 		return nil, fmt.Errorf("call cart-service failed: %w", err)
 	}
@@ -59,8 +72,7 @@ func UpdateCartStatus(cartID, status string) error {
 	}
 	req.Header.Set("Content-Type", "application/json")
 
-	client := &http.Client{Timeout: 5 * time.Second}
-	resp, err := client.Do(req)
+	resp, err := cartHTTPClient.Do(req)
 	if err != nil {
 		return fmt.Errorf("update cart status failed: %w", err)
 	}

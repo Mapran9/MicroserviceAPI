@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"os"
 	"strings"
@@ -15,6 +16,19 @@ type ProductResponse struct {
 	Price     *float64 `json:"price"`
 }
 
+var productHTTPClient = &http.Client{
+	Timeout: 5 * time.Second,
+	Transport: &http.Transport{
+		MaxIdleConns:        200,
+		MaxIdleConnsPerHost: 100,
+		IdleConnTimeout:     90 * time.Second,
+		DialContext: (&net.Dialer{
+			Timeout:   2 * time.Second,
+			KeepAlive: 30 * time.Second,
+		}).DialContext,
+	},
+}
+
 func GetProductPrice(productID string) (float64, error) {
 	baseURL := strings.TrimRight(os.Getenv("PRODUCT_BASE_URL"), "/")
 	if baseURL == "" {
@@ -22,10 +36,9 @@ func GetProductPrice(productID string) (float64, error) {
 		baseURL = "http://localhost:8002"
 	}
 
-	client := &http.Client{Timeout: 5 * time.Second}
 	url := fmt.Sprintf("%s/api/Products/%s", baseURL, productID)
 
-	resp, err := client.Get(url)
+	resp, err := productHTTPClient.Get(url)
 	if err != nil {
 		return 0, fmt.Errorf("call product-service failed: %w", err)
 	}
